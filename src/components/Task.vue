@@ -66,7 +66,6 @@ export default {
                 500,
                 250
             ],
-            amount: 0,
             order: {
                 
             }
@@ -77,82 +76,93 @@ export default {
 
         remove: function (index) {
 
-            this.packs.splice(index, 1);
+            this.packs.splice(index, 1); // Remove element from the packs property
         },
 
         addPackSize: function () {
 
-            if (parseInt(this.$refs.size.value, 10)) {
+            if (parseInt(this.$refs.size.value, 10) && // Parse the input as an in to check if it's valid
+                !this.packs.some(el => el === parseInt(this.$refs.size.value, 10)) // Check no existing element is already equal to the value you're trying to put in
+            )
+            {
 
-                this.packs.push(parseInt(this.$refs.size.value, 10));
+                this.packs.push(parseInt(this.$refs.size.value, 10)); // Push the value in
 
-                this.packs.sort((a, b) => {
+                this.packs.sort((a, b) => { // Sort the pack sizes largest to smallest
 
-                    return a - b;
+                    return b - a;
                 });
             }
         },
 
         getPacks: function () {
 
-            this.order = {};
+            this.order = {}; // Reset the order
+            let amount = 0; // Reset the amount
+            let current = 0; // Set the current amount
+            let tempPacks = this.packs; // Create temporary mirror of the packs array
 
-            if (parseInt(this.$refs.amount.value, 10)) {
 
-                this.amount = parseInt(this.$refs.amount.value, 10);
-            }
+            if (parseInt(this.$refs.amount.value, 10)) { // Parse the amount inputted
 
-            let current = 0;
-            let tempPacks = this.packs;
+                amount = parseInt(this.$refs.amount.value, 10); // Set the value
 
-            while ((current < this.amount) && (tempPacks.length > 0)) {
+            } else {
 
-                let largest = Math.max(...tempPacks);
+                return; // Finish the function since the input was invalid
+            }   
 
-                if ((current + largest) > this.amount) {
+            while ((current < amount) && (tempPacks.length > 0)) { // While the current is less the the amount and the temp packs still has values loop
 
-                    if (tempPacks.length == 1 && current < this.amount) {
+                let largest = Math.max(...tempPacks); // Get the largest pack
 
-                        if (!this.order[largest]) {
+                if ((current + largest) > amount) { // If the current + the largest exceeds the amount
 
-                            this.order[largest] = 0;
-                        }
+                    if (tempPacks.length == 1 && current < amount) { // Check if the largest is the only element in the temp packs 
+                                                                    // If so means that it's the smallest available unit
+                        this.checkAndCreateOrder(largest); // Check if the value exists, if not create it and set it to 0
 
-                        this.order[largest] += 1;
+                        this.order[largest] += 1; // Add one to the amount
                     }
 
-                    tempPacks = tempPacks.filter(
+                    tempPacks = tempPacks.filter( // Remove the largest from the temp packs
                         (value) => {
                             return value != largest
                         }
                     );
 
-                } else {
+                } else { // Else the packs was a valid amount
 
-                    if (!this.order[largest]) {
+                    this.checkAndCreateOrder(largest); // Check the value exists, if not create it
 
-                        this.order[largest] = 0;
-                    }
+                    this.order[largest] += 1; // Add one to the value
 
-                    this.order[largest] += 1;
-
-                    current += largest;
+                    current += largest; // Add value to the current
                 }
             }
 
-            Object.entries(this.order).forEach((set) => {
+            Object.entries(this.order).forEach((set) => { // Check the orders to make sure that the amount of packs * size of packs doesn't equal another pack
 
-                const [key, val] = set;
+                const [key, val] = set; // Get the key value pairs
 
-                if (this.packs.some(el => el === (key * val))) {
+                if (this.packs.some(el => el === (key * val))) { // If there is an equal amount
 
-                    delete this.order[key];
+                    delete this.order[key]; // Remove the current one
 
-                    this.order[key * val] = 1;
+                    this.checkAndCreateOrder(key * val); // Check that if value exists, if not create it
+
+                    this.order[key * val] += 1; // Add one to the pack\
+
                 }
-            });
+            });   
+        },
 
-                
+        checkAndCreateOrder: function (key) { // Common used function for checking if the order has a key
+
+            if (!this.order[key]) { // If it doesn't have the key
+
+                this.order[key] = 0; // Creates the key and sets it equal to 0
+            }
         }
     }
 }
